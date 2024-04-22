@@ -9,36 +9,10 @@
 import numpy as np
 import cv2 # import opencv (download mini anaconda and activate a opencv2 to run this)
 import plotter
-import time
 import heartrate
-
-# ----- Global / Static Variables -----
-# Perhaps not the best practice but here for testing
-
-
-
-
-def draw_rect(img, input, colour, thickness):
-    # Rect func has a start and end point of the rect drawn given by two tuples.
-    # x,y shows the origin of the rect (top left corner) and the x+w, y+h shows the end (bottom right corner).
-    x, y, w, h = input
-    cv2.rectangle(img, (x,y), (x+w, y+h), colour, thickness)  #draw rectangle
-
-
-def get_green_colour_space(img, input):
-    # Gets only the green colour space of the video feed.
-    # Currently uses default BGR but could try use HSV.
-    # hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-
-    # Research point: Different colour spaces
-        
-    x, y, w, h = input
-    roi = img[y:y+h, x:x+w]
-
-    lower_green_thresh = np.array((0,0,0))
-    upper_green_thresh = np.array((0,255,0))
-    mask = cv2.inRange(img, lower_green_thresh, upper_green_thresh)
-    res = cv2.bitwise_and(img,img, mask= mask)
+import pyqtgraph as pg
+import filter
+import scipy
 
 
 def make_ROI_coords(x, y, w, h):
@@ -75,37 +49,48 @@ def main():
     face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
     eye_cascade = cv2.CascadeClassifier('haarcascade_eye.xml')
 
+    # Basic set up
     cap = cv2.VideoCapture(0)  # Open the webcam device. Initially set as -1 however, only 0 works.
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    print(fps)
+
     p = plotter.Plotter(500,400)
+
     bpm = heartrate.Heartrate()
-    roi_avg = 0
+    file = open("output.txt", "w")
+    
+    sos = scipy.signal.iirfilter(4, Wn=[0.67, 3], fs=fps, btype="bandpass",
+                             ftype="butter", output="sos")
+    live_filter = filter.LiveSosFilter(sos)
 
     while cv2.waitKey(1) < 0:
         ret, img = cap.read()  # Read a frame from the webcam.
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)  # Convert the frame to grayscale for face detection.
-
         faces = face_cascade.detectMultiScale(gray, 1.3, 5)
+
         for (x,y,w,h) in faces: # currently can detect mutilple faces, impact of this on accuracy to be tested.
 
             cv2.rectangle(img,(x,y),(x+w,y+h),(255,255,255),1)  # Draw a white box around face.
             
             for coords in make_ROI_coords(x, y, w, h):
-                # draw_rect(img, roi, (0,0,255), -1) #lightly filled green rectangle for roi
-                # get_green_colour_space(img, roi)
 
                 x, y, w, h = coords
                 roi = img[y:y+h, x:x+w]
                 roi[:,:,0] = 0
                 roi[:,:,2] = 0
-                p.plot(cv2.mean(roi)[1])
-                bpm.bpm_calc(cv2.mean(roi)[1])
+                current_ppg = cv2.mean(roi)[1]
 
+                filtered_ppg = live_filter(current_ppg)
+
+                p.plot(filtered_ppg)
+                bpm.bpm_calc(filtered_ppg)
+                file.write(f"{filtered_ppg}\n")
 
         cv2.imshow('img',img)
 
     cap.release()
     cv2.destroyAllWindows()
-
+    file.close()
 
 
 if __name__ == "__main__":
