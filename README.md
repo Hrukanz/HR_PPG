@@ -1,9 +1,23 @@
-# BP_PPG
-Real time video PPG blood pressure estimation using OpenCV
+# HR_PPG
+Author: Haruka Yamamoto
+Date: 5/5/2024
 
-This code is part of a computer vision research paper conducted while studying at the University of Canterbury.
-The paper abstract is detailed below:
+This program requires the following libraries
 
-Cardiovascular disease (CVD) is a leading cause of death worldwide. Blood pressure (BP) is an important vital sign related to CVD. BP is currently measured using sphygmomanometers which are not common in many households. A wide range of contactless heart rate (HR) sensors are available, but BP sensors are much rarer. BP is a measurement of health that many are unaware of due to the lack of accessibility to specialised equipment. To fill this gap in available BP sensors, this paper proposes a method to provide people with a real time video BP estimation from accessible open-source software. The method proposed in this paper utilises photoplethysmography (PPG) signals from the green channel of RGB footage captured of the face. The face is tracked using a Haar Cascade Classifier. PPG was tested with a region of interest (ROI) consisting of the forehead or cheeks from the tracked face. The method used in this paper explores the practicality and accuracy of live capture BP estimation in varying use case environments. 
+- OpenCV
+- Numpy
+- Scipy
+- Pyqt5
+- Pyqtgraph
 
-NOTE: OpenCV is required for the excecution of the code. Activating a OpenCv Mini Anaconda environment is recommended.
+OpenCV need to be run in ananconda which lets you activate environments for your terminal.
+Run the "conda activate your_environment" command in conda once installed and set up.
+Once set up run "python face_detection.py" to start the program.
+The face detecting ROI can be toggled by pressing any key while the program is running.
+This can reduce computation time providing a smoother output.
+
+The code structure is very simple.
+The face detection file is the main program with the other named files doing what they are named as.
+The peak detection however, shares the 600 data point list with the grapher class to remove copied code.
+The size of the list is determined by the fps of the camera used and the length of time for data collection.
+More information commented in the files themselves.
